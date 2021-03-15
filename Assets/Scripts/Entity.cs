@@ -6,10 +6,12 @@ public abstract class Entity : MonoBehaviour
 {
     private int currentHP;
     public int initialHP = 3;
+    protected SpriteRenderer spriteR;
 
     protected virtual void Awake()
     {
         currentHP = initialHP;
+        spriteR = GetComponent<SpriteRenderer>();
     }
     public void TakeDamage()
     {

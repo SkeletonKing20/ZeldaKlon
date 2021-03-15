@@ -4,7 +4,9 @@ using UnityEngine;
 
 public class PlayerCharacter : Entity
 {
+    public float invincibilityDuration = 1f;
     float movementSpeed = 3f;
+    bool isInvincible;
     public float knockbackStrength;
        ///<summary>
        ///right = 0
@@ -23,6 +25,8 @@ public class PlayerCharacter : Entity
     Vector2 interactionBoxSize;
     Animator animeThor;
     CapsuleCollider2D collider;
+
+
     protected override void Awake()
     {
         base.Awake();
@@ -38,6 +42,11 @@ public class PlayerCharacter : Entity
         };
 
         interactionBoxSize = new Vector2(0.2f, 0.2f);
+    }
+
+    private void Start()
+    {
+        
     }
     void Update()
     {
@@ -63,16 +72,18 @@ public class PlayerCharacter : Entity
 
         Collider2D[] colliders = Physics2D.OverlapCapsuleAll((Vector2)transform.position + collider.offset, 
                                                              collider.size, collider.direction, 0);
-
-        foreach (var otherCollider in colliders)
+        if (!isInvincible)
         {
-            Enemy enemy = otherCollider.GetComponent<Enemy>();
-            if (enemy != null)
+            foreach (var otherCollider in colliders)
             {
-                TakeDamage();
-
-                Vector3 pushDirection = (transform.position - enemy.transform.position).normalized;
-                transform.position += pushDirection * knockbackStrength;
+                Enemy enemy = otherCollider.GetComponent<Enemy>();
+                if (enemy != null)
+                {
+                    TakeDamage();
+                    Vector3 pushDirection = (transform.position - enemy.transform.position).normalized;
+                    transform.position += pushDirection * knockbackStrength;
+                    StartCoroutine(InvincibilityCoroutine(invincibilityDuration));
+                }
             }
         }
 
@@ -148,5 +159,19 @@ public class PlayerCharacter : Entity
     {
         Debug.Log("You Died");
         RestoreHP();
+    }
+
+    private IEnumerator InvincibilityCoroutine(float duration)
+    {
+        spriteR.color = Color.red;
+        isInvincible = true;
+        for (float t = 0; t < duration; t += Time.deltaTime)
+        {
+            spriteR.color = Color.Lerp(Color.red, Color.white, t/duration);
+            yield return new WaitForEndOfFrame();
+        }
+
+        spriteR.color = Color.white;
+        isInvincible = false;
     }
 }
