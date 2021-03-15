@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerCharacter : MonoBehaviour
+public class PlayerCharacter : Entity
 {
     float movementSpeed = 3f;
        ///<summary>
@@ -21,8 +21,9 @@ public class PlayerCharacter : MonoBehaviour
     Vector3 interactionPosition;
     Vector2 interactionBoxSize;
     Animator animeThor;
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         animeThor = GetComponent<Animator>();
 
         localInteractionPositions = new Vector3[] 
@@ -111,11 +112,8 @@ public class PlayerCharacter : MonoBehaviour
 
         Collider2D otherCollider = Physics2D.OverlapBox(interactionPosition, interactionBoxSize, 0);
 
-        IDamageable[] damageable = otherCollider?.gameObject.GetComponents<IDamageable>();
-        foreach (var entity in damageable)
-        {
-            entity?.TakeDamage();
-        }
+        IDamageable damageable = otherCollider?.gameObject.GetComponent<IDamageable>();
+            damageable?.TakeDamage();
     }
     private void OnDrawGizmos()
     {
@@ -124,5 +122,11 @@ public class PlayerCharacter : MonoBehaviour
         {
             Gizmos.DrawWireCube(localInteractionPositions[(int)facingDirection], interactionBoxSize);
         }
+    }
+
+    protected override void Die()
+    {
+        Debug.Log("You Died");
+        RestoreHP();
     }
 }

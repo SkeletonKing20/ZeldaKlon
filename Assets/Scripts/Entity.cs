@@ -4,10 +4,10 @@ using UnityEngine;
 
 public abstract class Entity : MonoBehaviour
 {
-    int currentHP;
+    private int currentHP;
     public int initialHP = 3;
 
-    private void Awake()
+    protected virtual void Awake()
     {
         currentHP = initialHP;
     }
@@ -20,6 +20,9 @@ public abstract class Entity : MonoBehaviour
             Die();
         }
     }
-
+    protected void RestoreHP()
+    {
+        currentHP = initialHP;
+    }
     protected abstract void Die();
 }
