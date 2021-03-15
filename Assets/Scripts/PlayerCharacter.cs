@@ -5,6 +5,7 @@ using UnityEngine;
 public class PlayerCharacter : Entity
 {
     float movementSpeed = 3f;
+    public float knockbackStrength;
        ///<summary>
        ///right = 0
        ///left  = 1
@@ -21,11 +22,13 @@ public class PlayerCharacter : Entity
     Vector3 interactionPosition;
     Vector2 interactionBoxSize;
     Animator animeThor;
+    CapsuleCollider2D collider;
     protected override void Awake()
     {
         base.Awake();
         animeThor = GetComponent<Animator>();
-
+        collider = GetComponent<CapsuleCollider2D>();
+        knockbackStrength = 1f;
         localInteractionPositions = new Vector3[] 
         { 
           new Vector3(0.5f, 0.5f),
@@ -57,6 +60,23 @@ public class PlayerCharacter : Entity
         {
             Attack();
         }
+
+        Collider2D[] colliders = Physics2D.OverlapCapsuleAll((Vector2)transform.position + collider.offset, 
+                                                             collider.size, collider.direction, 0);
+
+        foreach (var otherCollider in colliders)
+        {
+            Enemy enemy = otherCollider.GetComponent<Enemy>();
+            if (enemy != null)
+            {
+                TakeDamage();
+
+                Vector3 pushDirection = (transform.position - enemy.transform.position).normalized;
+                transform.position += pushDirection * knockbackStrength;
+            }
+        }
+
+
 
         animeThor.SetFloat("xVelocity", currentVelocity.x);
         animeThor.SetFloat("yVelocity", currentVelocity.y);
