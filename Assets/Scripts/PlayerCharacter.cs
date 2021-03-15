@@ -52,6 +52,11 @@ public class PlayerCharacter : MonoBehaviour
             Interact();
         }
 
+        if (Input.GetButtonDown("Fire1"))
+        {
+            Attack();
+        }
+
         animeThor.SetFloat("xVelocity", currentVelocity.x);
         animeThor.SetFloat("yVelocity", currentVelocity.y);
         animeThor.SetFloat("facingDirection", facingDirection);
@@ -100,6 +105,18 @@ public class PlayerCharacter : MonoBehaviour
         interactable?.Interact();
     }
 
+    private void Attack()
+    {
+        interactionPosition = transform.position + localInteractionPositions[(int)facingDirection];
+
+        Collider2D otherCollider = Physics2D.OverlapBox(interactionPosition, interactionBoxSize, 0);
+
+        IDamageable[] damageable = otherCollider?.gameObject.GetComponents<IDamageable>();
+        foreach (var entity in damageable)
+        {
+            entity?.TakeDamage();
+        }
+    }
     private void OnDrawGizmos()
     {
         Gizmos.matrix = transform.localToWorldMatrix;
