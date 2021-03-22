@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 7125978900454752799}
   - component: {fileID: 7125978900454752798}
   - component: {fileID: 7125978900454752797}
-  m_Layer: 0
+  m_Layer: 9
   m_Name: Enemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -97,6 +97,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   initialHP: 3
+  attackableLayers:
+    serializedVersion: 2
+    m_Bits: 256
 --- !u!61 &7125978900454752797
 BoxCollider2D:
   m_ObjectHideFlags: 0

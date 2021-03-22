@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 1847755379009159461}
   - component: {fileID: 6755913247785038604}
   - component: {fileID: 2896901891581412367}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -98,6 +98,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   initialHP: 3
+  attackableLayers:
+    serializedVersion: 2
+    m_Bits: 512
 --- !u!95 &6755913247785038604
 Animator:
   serializedVersion: 3

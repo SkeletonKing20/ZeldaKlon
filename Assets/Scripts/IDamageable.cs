@@ -1,4 +1,4 @@
 ﻿public interface IDamageable
 {
-    void TakeDamage();
+    void TakeDamage(Entity damageDealer);
 }
