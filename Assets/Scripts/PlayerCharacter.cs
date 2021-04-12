@@ -2,6 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public struct RaycastOrigins
+{
+   public Vector2 bottomLeft, topLeft, bottomRight, topRight;
+}
+
 public class PlayerCharacter : Entity
 {
     float movementSpeed = 3f;
@@ -21,14 +26,48 @@ public class PlayerCharacter : Entity
     Vector3 interactionPosition;
     Vector2 interactionBoxSize;
     Animator animeThor;
-    CapsuleCollider2D collider;
+    BoxCollider2D collider;
 
+    private RaycastOrigins raycastOrigins;
+    float skinWidth = 0.01f;
 
+    public int horizontalRays = 2;
+    public int verticalRays = 2;
+
+    private float horizontalRaySpacing;
+    private float verticalRaySpacing;
+
+    public LayerMask collDetectMask;
+
+    void CalculateRaycastSpacing()
+    {
+        Bounds bounds = collider.bounds;
+        bounds.Expand(skinWidth * -2);
+
+        horizontalRaySpacing = bounds.size.y / (horizontalRays - 1);
+        verticalRaySpacing = bounds.size.x / (verticalRays - 1);
+    }
+    void UpdateRaycastOrigins()
+    {
+        Bounds bounds = collider.bounds;
+        bounds.Expand(skinWidth * -2);
+
+        raycastOrigins.bottomLeft = new Vector2(bounds.min.x, bounds.min.y);
+        raycastOrigins.bottomRight = new Vector2(bounds.max.x, bounds.min.y);
+        raycastOrigins.topLeft = new Vector2(bounds.min.x, bounds.max.y);
+        raycastOrigins.bottomRight = new Vector2(bounds.max.x, bounds.max.y);
+    }
+
+    private void OnValidate()
+    {
+        horizontalRays = Mathf.Clamp(horizontalRays, 2, int.MaxValue);
+        verticalRays = Mathf.Clamp(verticalRays, 2, int.MaxValue);
+    }
     protected override void Awake()
     {
         base.Awake();
         animeThor = GetComponent<Animator>();
-        collider = GetComponent<CapsuleCollider2D>();
+        collider = GetComponent<BoxCollider2D>();
         localInteractionPositions = new Vector3[]
         {
           new Vector3(0.5f, 0.5f),
@@ -38,6 +77,8 @@ public class PlayerCharacter : Entity
         };
 
         interactionBoxSize = new Vector2(0.2f, 0.2f);
+
+        CalculateRaycastSpacing();
     }
 
     private void Start()
@@ -49,6 +90,9 @@ public class PlayerCharacter : Entity
         movementDirection = ((Vector3.right * Input.GetAxisRaw("Horizontal")) + (Vector3.up * Input.GetAxisRaw("Vertical"))).normalized;
 
         currentVelocity = movementDirection * movementSpeed;
+
+        HorizontalCollisionDetection();
+
         isMoving = currentVelocity.sqrMagnitude > 0;
         if (isMoving)
         {
@@ -66,19 +110,19 @@ public class PlayerCharacter : Entity
             Attack();
         }
 
-        Collider2D[] colliders = Physics2D.OverlapCapsuleAll((Vector2)transform.position + collider.offset, 
-                                                             collider.size, collider.direction, 0);
-        if (!isInvincible)
-        {
-            foreach (var otherCollider in colliders)
-            {
-                Enemy enemy = otherCollider.GetComponent<Enemy>();
-                if (enemy != null)
-                {
-                    ReceiveDamage(enemy);
-                }
-            }
-        }
+        //Collider2D[] colliders = Physics2D.OverlapBoxAll((Vector2)transform.position + collider.offset, 
+        //                                                     collider.size, 0);
+        //if (!isInvincible)
+        //{
+        //    foreach (var otherCollider in colliders)
+        //    {
+        //        Enemy enemy = otherCollider.GetComponent<Enemy>();
+        //        if (enemy != null)
+        //        {
+        //            ReceiveDamage(enemy);
+        //        }
+        //    }
+        //}
 
 
 
@@ -152,5 +196,29 @@ public class PlayerCharacter : Entity
     {
         Debug.Log("You Died");
         RestoreHP();
+    }
+
+    void HorizontalCollisionDetection()
+    {
+        CalculateRaycastSpacing();
+        UpdateRaycastOrigins();
+
+        float horizontalDirection = Mathf.Sign(currentVelocity.x);
+        float distance = currentVelocity.x * Time.deltaTime;
+        Vector2 origin = (horizontalDirection > 0) ? raycastOrigins.bottomRight : raycastOrigins.bottomLeft;
+        for (int i = 0; i < horizontalRays; i++)
+        {
+            RaycastHit2D hit = Physics2D.Raycast(origin * Vector2.up * i * horizontalRaySpacing, 
+                                                 Vector2.right, distance,
+                                                 collDetectMask);
+            if (hit.collider != null)
+            {
+                Debug.Log(hit.distance);
+                distance = hit.distance;
+
+                float newX = hit.distance - skinWidth;
+                currentVelocity.x = newX;
+            }
+        }
     }
 }
