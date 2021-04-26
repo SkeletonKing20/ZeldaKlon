@@ -101,11 +101,11 @@ MonoBehaviour:
   attackableLayers:
     serializedVersion: 2
     m_Bits: 512
-  horizontalRays: 2
-  verticalRays: 2
+  horizontalRays: 5
+  verticalRays: 5
   collDetectMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 512
 --- !u!95 &6755913247785038604
 Animator:
   serializedVersion: 3

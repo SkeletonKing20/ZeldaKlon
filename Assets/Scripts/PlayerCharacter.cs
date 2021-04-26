@@ -26,10 +26,10 @@ public class PlayerCharacter : Entity
     Vector3 interactionPosition;
     Vector2 interactionBoxSize;
     Animator animeThor;
-    BoxCollider2D collider;
+    BoxCollider2D boxCollider;
 
     private RaycastOrigins raycastOrigins;
-    float skinWidth = 0.01f;
+    float skinWidth = 0.015f;
 
     public int horizontalRays = 2;
     public int verticalRays = 2;
@@ -41,7 +41,7 @@ public class PlayerCharacter : Entity
 
     void CalculateRaycastSpacing()
     {
-        Bounds bounds = collider.bounds;
+        Bounds bounds = boxCollider.bounds;
         bounds.Expand(skinWidth * -2);
 
         horizontalRaySpacing = bounds.size.y / (horizontalRays - 1);
@@ -49,13 +49,13 @@ public class PlayerCharacter : Entity
     }
     void UpdateRaycastOrigins()
     {
-        Bounds bounds = collider.bounds;
+        Bounds bounds = boxCollider.bounds;
         bounds.Expand(skinWidth * -2);
 
         raycastOrigins.bottomLeft = new Vector2(bounds.min.x, bounds.min.y);
         raycastOrigins.bottomRight = new Vector2(bounds.max.x, bounds.min.y);
         raycastOrigins.topLeft = new Vector2(bounds.min.x, bounds.max.y);
-        raycastOrigins.bottomRight = new Vector2(bounds.max.x, bounds.max.y);
+        raycastOrigins.topRight = new Vector2(bounds.max.x, bounds.max.y);
     }
 
     private void OnValidate()
@@ -67,7 +67,7 @@ public class PlayerCharacter : Entity
     {
         base.Awake();
         animeThor = GetComponent<Animator>();
-        collider = GetComponent<BoxCollider2D>();
+        boxCollider = GetComponent<BoxCollider2D>();
         localInteractionPositions = new Vector3[]
         {
           new Vector3(0.5f, 0.5f),
@@ -80,25 +80,10 @@ public class PlayerCharacter : Entity
 
         CalculateRaycastSpacing();
     }
-
-    private void Start()
-    {
-        
-    }
     void Update()
     {
-        movementDirection = ((Vector3.right * Input.GetAxisRaw("Horizontal")) + (Vector3.up * Input.GetAxisRaw("Vertical"))).normalized;
 
-        currentVelocity = movementDirection * movementSpeed;
-
-        HorizontalCollisionDetection();
-
-        isMoving = currentVelocity.sqrMagnitude > 0;
-        if (isMoving)
-        {
-            facingDirection = GetFacingDirectionFromVector(currentVelocity);
-        }
-        transform.position += currentVelocity * Time.deltaTime;
+        Move();
 
         if (Input.GetButtonDown("Interact"))
         {
@@ -190,6 +175,8 @@ public class PlayerCharacter : Entity
         {
             Gizmos.DrawWireCube(localInteractionPositions[(int)facingDirection], interactionBoxSize);
         }
+
+        
     }
 
     protected override void Die()
@@ -197,28 +184,75 @@ public class PlayerCharacter : Entity
         Debug.Log("You Died");
         RestoreHP();
     }
-
     void HorizontalCollisionDetection()
+    {
+
+        float horizontalDirection = Mathf.Sign(currentVelocity.x);
+        float distance = (Mathf.Abs(currentVelocity.x) + skinWidth);
+        Vector2 origin = (horizontalDirection > 0) ? raycastOrigins.bottomRight : raycastOrigins.bottomLeft;
+        RaycastHit2D hit;
+        for (int i = 0; i < horizontalRays; i++)
+        {
+            hit = Physics2D.Raycast(origin + Vector2.up * (i * horizontalRaySpacing), 
+                                                 Vector2.right * horizontalDirection,
+                                                 distance,
+                                                 collDetectMask);
+            if (hit.collider != null)
+            {
+                distance = hit.distance;
+                currentVelocity.x = Mathf.Clamp((hit.distance - skinWidth), 0, distance) * horizontalDirection;
+            }
+        }
+    }
+
+    void VerticalCollisionDetection()
+    {
+
+        float verticalDirection = Mathf.Sign(currentVelocity.y);
+        float distance = (Mathf.Abs(currentVelocity.y) + skinWidth);
+        Vector2 origin = (verticalDirection > 0) ? raycastOrigins.topLeft : raycastOrigins.bottomLeft;
+        RaycastHit2D hit;
+        for (int i = 0; i < verticalRays; i++)
+        {
+            hit = Physics2D.Raycast((origin + Vector2.right * (i * verticalRaySpacing)),
+                                                 Vector2.up * verticalDirection, 
+                                                 distance,
+                                                 collDetectMask);
+            if (hit.collider != null)
+            {
+                distance = hit.distance;
+                currentVelocity.y = Mathf.Clamp((hit.distance - skinWidth), 0, distance) * verticalDirection;
+            }
+        }
+
+    }
+    public void Move()
     {
         CalculateRaycastSpacing();
         UpdateRaycastOrigins();
 
-        float horizontalDirection = Mathf.Sign(currentVelocity.x);
-        float distance = currentVelocity.x * Time.deltaTime;
-        Vector2 origin = (horizontalDirection > 0) ? raycastOrigins.bottomRight : raycastOrigins.bottomLeft;
-        for (int i = 0; i < horizontalRays; i++)
-        {
-            RaycastHit2D hit = Physics2D.Raycast(origin * Vector2.up * i * horizontalRaySpacing, 
-                                                 Vector2.right, distance,
-                                                 collDetectMask);
-            if (hit.collider != null)
-            {
-                Debug.Log(hit.distance);
-                distance = hit.distance;
+        Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
 
-                float newX = hit.distance - skinWidth;
-                currentVelocity.x = newX;
-            }
+        currentVelocity = input.normalized * movementSpeed * Time.deltaTime;
+
+       
+        if (currentVelocity.x != 0)
+        {
+            HorizontalCollisionDetection();
         }
+
+        if (currentVelocity.y != 0)
+        {
+            VerticalCollisionDetection();
+        }
+
+        isMoving = currentVelocity.sqrMagnitude > 0;
+        if (isMoving)
+        {
+            facingDirection = GetFacingDirectionFromVector(currentVelocity);
+        }
+
+        transform.Translate(currentVelocity);
+
     }
 }
