@@ -5,6 +5,9 @@ using UnityEngine;
 
 public class Enemy : Entity, IDamageable
 {
+    public delegate void deathCounter();
+    public static event deathCounter OnEnemyDeath;
+    float killCooldown = 1f;
     public void TakeDamage(Entity damageDealer)
     {
         ReceiveDamage(damageDealer);
@@ -13,5 +16,10 @@ public class Enemy : Entity, IDamageable
     protected override void Die()
     {
         Destroy(gameObject);
+        if (OnEnemyDeath != null && Time.deltaTime > killCooldown)
+        {
+            killCooldown += Time.deltaTime;
+            OnEnemyDeath();
+        }
     }
 }
